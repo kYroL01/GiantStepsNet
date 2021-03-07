@@ -1,5 +1,5 @@
 /*
-* GiantStepNet - a jazzy protocol parser in GO
+* GiantStepsNet - a jazzy protocol parser in GO
 * @author - Michele Campus (michelecampus5@gmail.com)
 * NOTE: WORK IN PROGRESS
  */
@@ -16,7 +16,7 @@ import (
 )
 
 func main() {
-	programName := "GiantStepNet"
+	programName := "GiantStepsNet"
 	argLen := len(os.Args[1:])
 
 	var (
