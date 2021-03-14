@@ -10,8 +10,10 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/google/gopacket"
+	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/pcap"
 )
 
@@ -83,12 +85,117 @@ func main() {
 	}
 
 	// Use the handle as a packet source to process all packets
-	packetSource := gopacket.NewPacketSource(handle, handle.LinkType())
-	for packet := range packetSource.Packets() {
-		// TODO Process packet here
+	packetBegin := gopacket.NewPacketSource(handle, handle.LinkType())
+	for packet := range packetBegin.Packets() {
+		// Process packet here
+		packetBegin := gopacket.NewPacketSource(handle, handle.LinkType())
+		for packet := range packetBegin.Packets() {
+			parsePacketFunc(packet) // TODO return something
+		}
 		fmt.Println(packet)
 	}
 }
+
+/* PACKET PARSING */
+func parsePacketFunc(packet gopacket.Packet) {
+	// Ethernet layer parsing
+	ethernetLayer := packet.Layer(layers.LayerTypeEthernet)
+	if ethernetLayer != nil {
+		fmt.Println("[DL layer] --> Ethernet layer detected.")
+		ethernetPacket, _ := ethernetLayer.(*layers.Ethernet)
+		fmt.Println("-- Source MAC: ", ethernetPacket.SrcMAC)
+		fmt.Println("-- Destination MAC: ", ethernetPacket.DstMAC)
+		// TODO Check Ethernet Type to decode tunnelings
+		fmt.Println("-- Ethernet type: ", ethernetPacket.EthernetType)
+		fmt.Println()
+		// TODO extract info for stats
+	}
+
+	// IP layer parsing
+	ipLayer := packet.Layer(layers.LayerTypeIPv4)
+	if ipLayer != nil {
+		fmt.Println("[NET Layer] --> IPv4 layer detected.")
+		ip, _ := ipLayer.(*layers.IPv4)
+
+		/* IP layer variables:
+		* Version (4 or 6)
+		* IHL (IP Header Length in 32-bit)
+		* OS, Length, Id, Flags, FragOffset, TTL, Protocol (TCP or UDP),
+		* Checksum, SrcIP, DstIP
+		 */
+		fmt.Printf("From %s to %s\n", ip.SrcIP, ip.DstIP)
+		fmt.Printf("-- SRC IP = %s", ip.SrcIP)
+		fmt.Printf("-- DST IP = %s", ip.DstIP)
+		fmt.Println("-- TransportProto: ", ip.Protocol)
+		fmt.Println()
+		// TODO extract info for stats
+	}
+
+	// Transport layer parsing
+	/// TCP
+	tcpLayer := packet.Layer(layers.LayerTypeTCP)
+	if tcpLayer != nil {
+		fmt.Println("[TRNSP layer] TCP layer detected.")
+		tcp, _ := tcpLayer.(*layers.TCP)
+
+		/* TCP layer variables:
+		* SrcPort, DstPort, Seq, Ack, DataOffset, Window, Checksum, Urgent
+		* Bool flags: FIN, SYN, RST, PSH, ACK, URG, ECE, CWR, NS
+		 */
+		fmt.Printf("From port %d to %d\n", tcp.SrcPort, tcp.DstPort)
+		fmt.Printf("-- SRC PORT = %s", tcp.SrcPort)
+		fmt.Printf("-- DST PORT = %s", tcp.DstPort)
+		fmt.Println(" -- FLOW : ", tcp.TransportFlow())
+		fmt.Println("-- SYN: ", tcp.SYN)
+		fmt.Println("-- Seq Number: ", tcp.Seq)
+		fmt.Println()
+		// TODO extract info for stats
+	}
+	/// UDP
+	udpLayer := packet.Layer(layers.LayerTypeUDP)
+	if udpLayer != nil {
+		fmt.Println("[TRNSP layer] UDP layer detected.")
+		udp, _ := tcpLayer.(*layers.UDP)
+
+		/* UDP layer variables:
+		* TODO
+		 */
+		fmt.Printf("From port %d to %d\n", udp.SrcPort, udp.DstPort)
+		fmt.Printf("-- SRC PORT = %s", udp.SrcPort)
+		fmt.Printf("-- DST PORT = %s", udp.DstPort)
+		fmt.Println("-- FLOW : ", udp.TransportFlow())
+		fmt.Println("-- Len = ", udp.Length)
+		fmt.Println()
+		// TODO extract info for stats
+	}
+
+	// Iterate over all layers, printing out each layer type
+	fmt.Println("ALL packet layers:")
+	for _, layer := range packet.Layers() {
+		fmt.Println("# ", layer.LayerType())
+	}
+
+	/* Application layer parsing - PAYLOAD */
+	payload := packet.ApplicationLayer()
+	if payload != nil {
+		fmt.Println("Application layer/Payload found.")
+		fmt.Printf("%s\n", payload.Payload())
+
+		/* TODO create dissectors to call here */
+
+		// Search for a string inside the payload
+		if strings.Contains(string(payload.Payload()), "SSH") {
+			fmt.Println("SSH found!")
+		}
+	}
+
+	// Check for errors
+	if err := packet.ErrorLayer(); err != nil {
+		fmt.Println("Error decoding some part of the packet:", err)
+	}
+}
+
+/*** AUX FUNC ***/
 
 // Help - print command options availlable
 func Help(pName string) {
