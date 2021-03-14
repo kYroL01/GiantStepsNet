@@ -124,8 +124,8 @@ func parsePacketFunc(packet gopacket.Packet) {
 		* Checksum, SrcIP, DstIP
 		 */
 		fmt.Printf("From %s to %s\n", ip.SrcIP, ip.DstIP)
-		fmt.Printf("-- SRC IP = %s", ip.SrcIP)
-		fmt.Printf("-- DST IP = %s", ip.DstIP)
+		fmt.Printf("-- SRC IP = %s\n", ip.SrcIP)
+		fmt.Printf("-- DST IP = %s\n", ip.DstIP)
 		fmt.Println("-- TransportProto: ", ip.Protocol)
 		fmt.Println()
 		// TODO extract info for stats
@@ -143,8 +143,8 @@ func parsePacketFunc(packet gopacket.Packet) {
 		* Bool flags: FIN, SYN, RST, PSH, ACK, URG, ECE, CWR, NS
 		 */
 		fmt.Printf("From port %d to %d\n", tcp.SrcPort, tcp.DstPort)
-		fmt.Printf("-- SRC PORT = %s", tcp.SrcPort)
-		fmt.Printf("-- DST PORT = %s", tcp.DstPort)
+		fmt.Printf("-- SRC PORT = %s\n", tcp.SrcPort)
+		fmt.Printf("-- DST PORT = %s\n", tcp.DstPort)
 		fmt.Println(" -- FLOW : ", tcp.TransportFlow())
 		fmt.Println("-- SYN: ", tcp.SYN)
 		fmt.Println("-- Seq Number: ", tcp.Seq)
@@ -161,8 +161,8 @@ func parsePacketFunc(packet gopacket.Packet) {
 		* TODO
 		 */
 		fmt.Printf("From port %d to %d\n", udp.SrcPort, udp.DstPort)
-		fmt.Printf("-- SRC PORT = %s", udp.SrcPort)
-		fmt.Printf("-- DST PORT = %s", udp.DstPort)
+		fmt.Printf("-- SRC PORT = %s\n", udp.SrcPort)
+		fmt.Printf("-- DST PORT = %s\n", udp.DstPort)
 		fmt.Println("-- FLOW : ", udp.TransportFlow())
 		fmt.Println("-- Len = ", udp.Length)
 		fmt.Println()
