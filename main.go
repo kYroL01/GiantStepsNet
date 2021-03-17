@@ -88,10 +88,7 @@ func main() {
 	packetBegin := gopacket.NewPacketSource(handle, handle.LinkType())
 	for packet := range packetBegin.Packets() {
 		// Process packet here
-		packetBegin := gopacket.NewPacketSource(handle, handle.LinkType())
-		for packet := range packetBegin.Packets() {
-			parsePacketFunc(packet) // TODO return something
-		}
+		parsePacketFunc(packet) // TODO return something
 		fmt.Println(packet)
 	}
 }
