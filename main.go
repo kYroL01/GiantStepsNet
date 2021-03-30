@@ -17,6 +17,15 @@ import (
 	"github.com/google/gopacket/pcap"
 )
 
+// For each packet we use again these
+var eth layers.Ethernet
+var sll layers.LinuxSLL
+var ipv4 layers.IPv4
+var ipv6 layers.IPv6
+var tcp layers.TCP
+var udp layers.UDP
+var sct layers.SCTP
+
 func main() {
 	programName := "GiantStepsNet"
 	argLen := len(os.Args[1:])
@@ -84,17 +93,42 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// Use the handle as a packet source to process all packets
+	// METHOD 1. Use the handle as a packet source to process all packets
 	packetBegin := gopacket.NewPacketSource(handle, handle.LinkType())
 	for packet := range packetBegin.Packets() {
 		// Process packet here
 		parsePacketFunc(packet) // TODO return something
 		fmt.Println(packet)
 	}
+
 }
 
 /* PACKET PARSING */
 func parsePacketFunc(packet gopacket.Packet) {
+
+	parser := gopacket.NewDecodingLayerParser(
+		layers.LayerTypeEthernet,
+		&eth,
+		&ipv4,
+		&ipv6,
+		&tcp,
+		&udp,
+	)
+	foundLayerTypes := []gopacket.LayerType{}
+
+	err := parser.DecodeLayers(packet.Data(), &foundLayerTypes)
+	if err != nil {
+		fmt.Println("Trouble decoding layers: ", err)
+	}
+
+	// Iterate over all layers, printing out each layer type
+	fmt.Println("ALL packet layers:")
+	for _, layer := range packet.Layers() {
+		fmt.Println("# ", layer.LayerType())
+	}
+
+	// TODO FINISH
+
 	// Ethernet layer parsing
 	ethernetLayer := packet.Layer(layers.LayerTypeEthernet)
 	if ethernetLayer != nil {
@@ -142,7 +176,7 @@ func parsePacketFunc(packet gopacket.Packet) {
 		fmt.Printf("From port %d to %d\n", tcp.SrcPort, tcp.DstPort)
 		fmt.Printf("-- SRC PORT = %s\n", tcp.SrcPort)
 		fmt.Printf("-- DST PORT = %s\n", tcp.DstPort)
-		fmt.Println(" -- FLOW : ", tcp.TransportFlow())
+		fmt.Println("-- FLOW : ", tcp.TransportFlow())
 		fmt.Println("-- SYN: ", tcp.SYN)
 		fmt.Println("-- Seq Number: ", tcp.Seq)
 		fmt.Println()
@@ -166,12 +200,6 @@ func parsePacketFunc(packet gopacket.Packet) {
 		// TODO extract info for stats
 	}
 
-	// Iterate over all layers, printing out each layer type
-	fmt.Println("ALL packet layers:")
-	for _, layer := range packet.Layers() {
-		fmt.Println("# ", layer.LayerType())
-	}
-
 	/* Application layer parsing - PAYLOAD */
 	payload := packet.ApplicationLayer()
 	if payload != nil {
@@ -181,7 +209,7 @@ func parsePacketFunc(packet gopacket.Packet) {
 		/* TODO create dissectors to call here */
 
 		// Search for a string inside the payload
-		if strings.Contains(string(payload.Payload()), "SSH") {
+		if strings.Contains(string(payload.Payload()), "ssh") {
 			fmt.Println("SSH found!")
 		}
 	}
@@ -215,9 +243,6 @@ func ListDevices() {
 	for _, device := range devices {
 		if device.Name != "" {
 			fmt.Println("\nName: ", device.Name)
-		}
-		if device.Description != "" {
-			fmt.Println("Description: ", device.Description)
 		}
 		for _, address := range device.Addresses {
 			if address.IP != nil {
