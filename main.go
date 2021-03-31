@@ -33,9 +33,9 @@ func main() {
 	var (
 		iface   string
 		fname   string
-		snaplen int32 = 1500
-		filter        = "vlan or ip" // BPF filter
-		promisc bool  = false
+		snaplen int32  = 1500
+		filter  string = "vlan or ip" // BPF filter
+		promisc bool   = false
 		err     error
 		//timeout      time.Duration = 30 * time.Second
 		handle *pcap.Handle
