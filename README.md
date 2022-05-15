@@ -5,4 +5,4 @@
 
 ### Dependencies
 
-Run the script `dep.sh` to satisfy to dependencies for the project
+Run `go mod tidy` to satisfy the dependencies
